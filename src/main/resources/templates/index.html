@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Интернет-магазин</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <nav>
+        <a th:href="@{/}" class="logo-link">
+            <img th:src="@{/images/logo.png}" alt="Логотип" class="logo">
+        </a>
+        <div>
+            <a th:href="@{/}">Главная</a>
+            <span sec:authorize="isAuthenticated()">
+                <a th:href="@{/cart}">Корзина</a>
+                <a th:href="@{/orders}">Заказы</a>
+                <a sec:authorize="hasRole('SELLER')" th:href="@{/seller/products}">Управление</a>
+                <form th:action="@{/logout}" method="post" style="display:inline;">
+                    <button type="submit">Выход</button>
+                </form>
+            </span>
+            <span sec:authorize="!isAuthenticated()">
+                <a th:href="@{/login}">Вход</a>
+                <a th:href="@{/register}">Регистрация</a>
+            </span>
+        </div>
+    </nav>
+
+    <div class="container">
+
+        <section class="categories-section">
+            <h2>Категории</h2>
+            <div class="categories-grid" id="categoriesGrid">
+                <a th:each="cat, iterStat : ${categories}" 
+                   th:href="@{/category/{id}(id=${cat.id})}" 
+                   class="category-card"
+                   th:classappend="${iterStat.index >= 6} ? 'hidden-category' : ''">
+                    <div class="category-image">
+                        <img th:src="${cat.imageUrl != null ? cat.imageUrl : '/images/categories/category-' + cat.id + '.png'}" 
+                             th:alt="${cat.name}"
+                             onerror="this.src='/images/categories/placeholder.svg'">
+                    </div>
+                    <h3 th:text="${cat.name}">Категория</h3>
+                </a>
+            </div>
+            <div class="toggle-categories-container">
+                <button id="toggleCategoriesBtn" class="toggle-categories-btn" onclick="toggleCategories()">
+                    <span id="btnText">Все категории</span>
+                    <span id="btnIcon">▼</span>
+                </button>
+            </div>
+        </section>
+        
+        <style>
+            .toggle-categories-container {
+                display: flex;
+                justify-content: center;
+                margin-top: 2rem;
+                margin-bottom: 1rem;
+            }
+            
+            .toggle-categories-btn {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 12px 32px;
+                background: #981715;
+                color: #FCFAF2;
+                border: none;
+                border-radius: 8px;
+                font-size: 15px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                box-shadow: 0 2px 8px rgba(152, 23, 21, 0.2);
+            }
+            
+            .toggle-categories-btn:hover {
+                background: #7a1211;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(152, 23, 21, 0.3);
+            }
+            
+            .toggle-categories-btn #btnIcon {
+                transition: transform 0.3s ease;
+                font-size: 12px;
+            }
+            
+            .toggle-categories-btn.expanded #btnIcon {
+                transform: rotate(180deg);
+            }
+            
+            .hidden-category {
+                display: none;
+            }
+            
+            .categories-grid {
+                transition: all 0.3s ease;
+            }
+            
+            @media (max-width: 768px) {
+                .toggle-categories-btn {
+                    width: 90%;
+                    justify-content: center;
+                }
+            }
+        </style>
+        
+        <script>
+            let categoriesExpanded = false;
+            
+            function toggleCategories() {
+                categoriesExpanded = !categoriesExpanded;
+                const hiddenCategories = document.querySelectorAll('.hidden-category');
+                const btn = document.getElementById('toggleCategoriesBtn');
+                const btnText = document.getElementById('btnText');
+                const btnIcon = document.getElementById('btnIcon');
+                
+                if (categoriesExpanded) {
+                    hiddenCategories.forEach(cat => {
+                        cat.style.display = 'block';
+                        setTimeout(() => {
+                            cat.style.opacity = '1';
+                            cat.style.transform = 'scale(1)';
+                        }, 10);
+                    });
+                    btnText.textContent = 'Скрыть категории';
+                    btn.classList.add('expanded');
+                } else {
+                    hiddenCategories.forEach(cat => {
+                        cat.style.opacity = '0';
+                        cat.style.transform = 'scale(0.95)';
+                        setTimeout(() => {
+                            cat.style.display = 'none';
+                        }, 300);
+                    });
+                    btnText.textContent = 'Все категории';
+                    btn.classList.remove('expanded');
+                }
+            }
+            
+            // инициализация стилей для скрытых категорий
+            document.addEventListener('DOMContentLoaded', function() {
+                const hiddenCategories = document.querySelectorAll('.hidden-category');
+                hiddenCategories.forEach(cat => {
+                    cat.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                    cat.style.opacity = '0';
+                    cat.style.transform = 'scale(0.95)';
+                });
+            });
+        </script>
+
+        <h2>Каталог товаров</h2>
+        
+        <form th:action="@{/}" method="get" class="search-form">
+            <input type="text" name="search" th:value="${search}" placeholder="Поиск товаров...">
+            <select name="categoryId">
+                <option value="">Все категории</option>
+                <option th:each="cat : ${categories}" 
+                        th:value="${cat.id}" 
+                        th:text="${cat.name}"
+                        th:selected="${cat.id == categoryId}"></option>
+            </select>
+            <button type="submit">Искать</button>
+        </form>
+
+        <div class="products-grid">
+            <div th:each="product : ${products.content}" class="product-card">
+                <div class="product-image">
+                    <img th:src="${product.mainImage}" th:alt="${product.name}" 
+                         onerror="this.src='/images/logo.png'">
+                </div>
+                <h3 th:text="${product.name}">Товар</h3>
+                <p th:text="${#strings.abbreviate(product.description, 100)}">Описание</p>
+                <p class="price" th:text="${product.price} + ' ₽'">Цена</p>
+                <p th:if="${product.available}" class="available">✓ В наличии</p>
+                <p th:unless="${product.available}" class="unavailable">Нет в наличии</p>
+                <a sec:authorize="isAuthenticated()" 
+                   th:href="@{/products/{id}(id=${product.id})}" 
+                   class="btn">Подробнее</a>
+            </div>
+        </div>
+
+        <div th:if="${products.totalPages > 1}" class="pagination-container">
+            <div class="pagination-info">
+                Страница <span th:text="${products.number + 1}">1</span> из <span th:text="${products.totalPages}">1</span>
+                <span class="total-items">(Всего товаров: <span th:text="${products.totalElements}">0</span>)</span>
+            </div>
+            
+            <div class="pagination">
+
+                <a th:if="${!products.first}" 
+                   th:href="@{/(page=0, search=${search}, categoryId=${categoryId})}" 
+                   class="pagination-btn"
+                   title="Первая страница">
+                    ⟪
+                </a>
+                <span th:if="${products.first}" class="pagination-btn disabled">⟪</span>
+                
+                <a th:if="${products.hasPrevious()}" 
+                   th:href="@{/(page=${products.number - 1}, search=${search}, categoryId=${categoryId})}" 
+                   class="pagination-btn"
+                   title="Предыдущая страница">
+                    ‹
+                </a>
+                <span th:if="${!products.hasPrevious()}" class="pagination-btn disabled">‹</span>
+                
+                <th:block th:each="i : ${#numbers.sequence(0, products.totalPages - 1)}">
+
+                    <a th:if="${i == 0}" 
+                       th:href="@{/(page=${i}, search=${search}, categoryId=${categoryId})}" 
+                       th:class="${i == products.number} ? 'pagination-btn active' : 'pagination-btn'"
+                       th:text="${i + 1}">1</a>
+                    
+                    <span th:if="${i == 1 && products.number > 3}" class="pagination-dots">...</span>
+                    
+                    <a th:if="${i > 0 && i < products.totalPages - 1 && (i >= products.number - 2 && i <= products.number + 2)}" 
+                       th:href="@{/(page=${i}, search=${search}, categoryId=${categoryId})}" 
+                       th:class="${i == products.number} ? 'pagination-btn active' : 'pagination-btn'"
+                       th:text="${i + 1}">2</a>
+                    
+                    <span th:if="${i == products.totalPages - 2 && products.number < products.totalPages - 4}" class="pagination-dots">...</span>
+                    
+                    <a th:if="${i == products.totalPages - 1 && products.totalPages > 1}" 
+                       th:href="@{/(page=${i}, search=${search}, categoryId=${categoryId})}" 
+                       th:class="${i == products.number} ? 'pagination-btn active' : 'pagination-btn'"
+                       th:text="${i + 1}">10</a>
+                </th:block>
+                
+                <a th:if="${products.hasNext()}" 
+                   th:href="@{/(page=${products.number + 1}, search=${search}, categoryId=${categoryId})}" 
+                   class="pagination-btn"
+                   title="Следующая страница">
+                    ›
+                </a>
+                <span th:if="${!products.hasNext()}" class="pagination-btn disabled">›</span>
+                
+                <a th:if="${!products.last}" 
+                   th:href="@{/(page=${products.totalPages - 1}, search=${search}, categoryId=${categoryId})}" 
+                   class="pagination-btn"
+                   title="Последняя страница">
+                    ⟫
+                </a>
+                <span th:if="${products.last}" class="pagination-btn disabled">⟫</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${product.name}">Товар</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .product-page {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+        
+        .breadcrumb {
+            color: #999;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .breadcrumb a {
+            color: #981715;
+            text-decoration: none;
+        }
+        
+        .product-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            margin-bottom: 40px;
+        }
+        
+        .product-gallery {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .main-image {
+            width: 100%;
+            aspect-ratio: 4/3;
+            background: linear-gradient(135deg, #981715 0%, #7a1211 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
+        .main-image img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        
+        .thumbnail-list {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+        }
+        
+        .thumbnail {
+            width: 100px;
+            height: 100px;
+            border-radius: 8px;
+            border: 2px solid transparent;
+            cursor: pointer;
+            overflow: hidden;
+            flex-shrink: 0;
+            background: #f5f5f5;
+        }
+        
+        .thumbnail.active {
+            border-color: #981715;
+        }
+        
+        .thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .product-info h1 {
+            font-size: 32px;
+            margin-bottom: 20px;
+            color: #1a1a1a;
+        }
+        
+        .product-meta {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .availability-badge {
+            background: #d1fae5;
+            color: #065f46;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .product-sku {
+            color: #999;
+            font-size: 14px;
+        }
+        
+        .product-price {
+            font-size: 42px;
+            font-weight: 700;
+            color: #981715;
+            margin-bottom: 30px;
+        }
+        
+        .product-section {
+            background: #f9fafb;
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+        
+        .product-section h3 {
+            font-size: 18px;
+            margin-bottom: 12px;
+            color: #1a1a1a;
+        }
+        
+        .product-section p {
+            color: #666;
+            line-height: 1.6;
+        }
+        
+        .product-specs {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .spec-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .spec-label {
+            color: #666;
+            flex-shrink: 0;
+        }
+        
+        .spec-value {
+            color: #1a1a1a;
+            font-weight: 500;
+            text-align: right;
+            flex-wrap: wrap;
+        }
+        
+        .add-to-cart-form {
+            display: flex;
+            gap: 12px;
+            margin-top: 30px;
+        }
+        
+        .quantity-input {
+            width: 80px;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        
+        .add-to-cart-btn {
+            flex: 1;
+            background: #981715;
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .add-to-cart-btn:hover {
+            background: #7a1211;
+        }
+        
+        .category-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        
+        .category-tag {
+            background: #fee2e2;
+            color: #981715;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+        
+        @media (max-width: 768px) {
+            .product-container {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+        }
+        
+        /* Стили для опций цепи */
+        .chain-options {
+            background: #f9fafb;
+            padding: 24px;
+            border-radius: 12px;
+            margin: 24px 0;
+            border: 2px solid #e5e7eb;
+        }
+        
+        .chain-options h3 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #1a1a1a;
+        }
+        
+        .chain-option-group {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+        
+        .chain-option-group h4 {
+            margin-bottom: 16px;
+            color: #981715;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        .chain-option-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #374151;
+            font-size: 14px;
+        }
+        
+        .chain-option-group select,
+        .chain-option-group input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 15px;
+            transition: border-color 0.2s;
+        }
+        
+        .chain-option-group select:focus,
+        .chain-option-group input[type="text"]:focus {
+            outline: none;
+            border-color: #981715;
+        }
+        
+        .chain-option-group select:required:invalid {
+            color: #9ca3af;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a th:href="@{/}" class="logo-link">
+            <img th:src="@{/images/logo.png}" alt="Логотип" class="logo">
+        </a>
+        <div>
+            <a th:href="@{/}">Главная</a>
+            <a th:href="@{/cart}">Корзина</a>
+        </div>
+    </nav>
+
+    <div class="product-page">
+        <div class="breadcrumb">
+            ← <a th:href="@{/}">Вернуться к каталогу</a>
+        </div>
+
+        <div class="product-container">
+            <div class="product-gallery">
+                <div class="main-image" id="mainImage">
+                    <img th:src="${product.mainImage}" alt="Product Image">
+                </div>
+                <div class="thumbnail-list" th:if="${!product.imageList.isEmpty()}">
+                    <div class="thumbnail active" th:each="image, iterStat : ${product.imageList}" 
+                         th:data-image="${image}"
+                         onclick="changeImage(this.getAttribute('data-image'), this)">
+                        <img th:src="${image}" alt="Thumbnail">
+                    </div>
+                </div>
+            </div>
+
+            <div class="product-info">
+                <h1 th:text="${product.name}">Название товара</h1>
+                
+                <div class="product-meta">
+                    <span class="availability-badge" th:if="${product.available}">✓ В наличии</span>
+                    <span class="availability-badge" style="background: #fee2e2; color: #991b1b;" th:unless="${product.available}">Нет в наличии</span>
+                    <span class="product-sku">Артикул: PR-<span th:text="${#numbers.formatInteger(product.id, 3, 'NONE')}">001</span></span>
+                </div>
+
+                <div class="product-price" th:text="${product.price} + ' ₽'">2 990 ₽</div>
+
+                <div class="product-section">
+                    <h3>Описание</h3>
+                    <p th:text="${product.description}">Описание товара</p>
+                </div>
+
+                <div class="product-section">
+                    <h3>Характеристики</h3>
+                    <div class="product-specs">
+                        <div class="spec-row" th:if="${product.category != null}">
+                            <span class="spec-label">Материал:</span>
+                            <span class="spec-value">Нержавеющая сталь</span>
+                        </div>
+                        <div class="spec-row" th:if="${!product.categories.isEmpty()}">
+                            <span class="spec-label">Категории:</span>
+                            <span class="spec-value">
+                                <span th:each="cat, iterStat : ${product.categories}">
+                                    <span th:text="${cat.name}">Категория</span><span th:if="${!iterStat.last}">, </span>
+                                </span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div th:if="${needsChainOption}" class="chain-options">
+                    <h3>Параметры цепи</h3>
+                    
+                    <div th:if="${!isPaired}" class="chain-option-group">
+                        <label>Длина цепи: <span style="color: #ef4444;">*</span></label>
+                        <select id="chainLength1" name="chainLength1" required>
+                            <option value="">Выберите длину</option>
+                            <option th:each="length : ${#numbers.sequence(40, 65, 5)}" 
+                                    th:value="${length}" 
+                                    th:text="${length} + ' см'">40 см</option>
+                        </select>
+                        
+                        <label>Номер цепи: <span style="color: #ef4444;">*</span></label>
+                        <input type="text" id="chainNumber1" name="chainNumber1" placeholder="Введите номер цепи" required>
+                    </div>
+                    
+                    <div th:if="${isPaired}">
+                        <div class="chain-option-group">
+                            <h4>Первое украшение</h4>
+                            <label>Длина цепи: <span style="color: #ef4444;">*</span></label>
+                            <select id="chainLength1Paired" name="chainLength1" required>
+                                <option value="">Выберите длину</option>
+                                <option th:each="length : ${#numbers.sequence(40, 65, 5)}" 
+                                        th:value="${length}" 
+                                        th:text="${length} + ' см'">40 см</option>
+                            </select>
+                            
+                            <label>Номер цепи: <span style="color: #ef4444;">*</span></label>
+                            <input type="text" id="chainNumber1Paired" name="chainNumber1" placeholder="Номер цепи 1" required>
+                        </div>
+                        
+                        <div class="chain-option-group">
+                            <h4>Второе украшение</h4>
+                            <label>Длина цепи: <span style="color: #ef4444;">*</span></label>
+                            <select id="chainLength2" name="chainLength2" required>
+                                <option value="">Выберите длину</option>
+                                <option th:each="length : ${#numbers.sequence(40, 65, 5)}" 
+                                        th:value="${length}" 
+                                        th:text="${length} + ' см'">40 см</option>
+                            </select>
+                            
+                            <label>Номер цепи: <span style="color: #ef4444;">*</span></label>
+                            <input type="text" id="chainNumber2" name="chainNumber2" placeholder="Номер цепи 2" required>
+                        </div>
+                    </div>
+                </div>
+
+                <form th:if="${product.available}" th:action="@{/cart/add}" method="post" class="add-to-cart-form" id="addToCartForm">
+                    <input type="hidden" name="productId" th:value="${product.id}">
+                    <input type="hidden" name="chainLength1" id="hiddenChainLength1">
+                    <input type="hidden" name="chainNumber1" id="hiddenChainNumber1">
+                    <input type="hidden" name="chainLength2" id="hiddenChainLength2">
+                    <input type="hidden" name="chainNumber2" id="hiddenChainNumber2">
+                    <input type="number" name="quantity" value="1" min="1" th:max="${product.quantity}" class="quantity-input">
+                    <button type="submit" class="add-to-cart-btn">Добавить в корзину</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function changeImage(imageSrc, thumbnail) {
+            document.querySelector('#mainImage img').src = imageSrc;
+            document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
+            thumbnail.classList.add('active');
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('addToCartForm');
+            if (!form) return;
+            
+            form.addEventListener('submit', function(e) {
+                const chainOptions = document.querySelector('.chain-options');
+                if (!chainOptions) return;
+                
+                const chainLength1 = document.getElementById('chainLength1') || document.getElementById('chainLength1Paired');
+                const chainNumber1 = document.getElementById('chainNumber1') || document.getElementById('chainNumber1Paired');
+                const chainLength2 = document.getElementById('chainLength2');
+                const chainNumber2 = document.getElementById('chainNumber2');
+                
+                if (chainLength1) {
+                    if (!chainLength1.value) {
+                        e.preventDefault();
+                        alert('Пожалуйста, выберите длину цепи');
+                        chainLength1.focus();
+                        return false;
+                    }
+                    if (!chainNumber1.value) {
+                        e.preventDefault();
+                        alert('Пожалуйста, введите номер цепи');
+                        chainNumber1.focus();
+                        return false;
+                    }
+                    document.getElementById('hiddenChainLength1').value = chainLength1.value;
+                    document.getElementById('hiddenChainNumber1').value = chainNumber1.value;
+                }
+                
+                if (chainLength2) {
+                    if (!chainLength2.value) {
+                        e.preventDefault();
+                        alert('Пожалуйста, выберите длину цепи для второго украшения');
+                        chainLength2.focus();
+                        return false;
+                    }
+                    if (!chainNumber2.value) {
+                        e.preventDefault();
+                        alert('Пожалуйста, введите номер цепи для второго украшения');
+                        chainNumber2.focus();
+                        return false;
+                    }
+                    document.getElementById('hiddenChainLength2').value = chainLength2.value;
+                    document.getElementById('hiddenChainNumber2').value = chainNumber2.value;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

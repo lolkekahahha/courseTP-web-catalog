@@ -1,0 +1,22 @@
+INSERT INTO categories (name) VALUES ('Новинки') ON CONFLICT (name) DO NOTHING;
+INSERT INTO categories (name) VALUES ('Украшения с гравировкой') ON CONFLICT (name) DO NOTHING;
+INSERT INTO categories (name) VALUES ('Взгляд любви') ON CONFLICT (name) DO NOTHING;
+INSERT INTO categories (name) VALUES ('Photocartochka') ON CONFLICT (name) DO NOTHING;
+INSERT INTO categories (name) VALUES ('Медальон с фото') ON CONFLICT (name) DO NOTHING;
+INSERT INTO categories (name) VALUES ('Украшения Морзе') ON CONFLICT (name) DO NOTHING;
+INSERT INTO categories (name) VALUES ('Парные браслеты') ON CONFLICT (name) DO NOTHING;
+INSERT INTO categories (name) VALUES ('Парные кулоны') ON CONFLICT (name) DO NOTHING;
+INSERT INTO categories (name) VALUES ('Парные кольца') ON CONFLICT (name) DO NOTHING;
+INSERT INTO categories (name) VALUES ('Браслеты') ON CONFLICT (name) DO NOTHING;
+INSERT INTO categories (name) VALUES ('Кулоны') ON CONFLICT (name) DO NOTHING;
+INSERT INTO categories (name) VALUES ('Чокеры') ON CONFLICT (name) DO NOTHING;
+INSERT INTO categories (name) VALUES ('Кольца') ON CONFLICT (name) DO NOTHING;
+INSERT INTO categories (name) VALUES ('Серьги') ON CONFLICT (name) DO NOTHING;
+INSERT INTO categories (name) VALUES ('Анклеты') ON CONFLICT (name) DO NOTHING;
+INSERT INTO categories (name) VALUES ('Обвес/Брелоки') ON CONFLICT (name) DO NOTHING;
+INSERT INTO categories (name) VALUES ('Мужские украшения') ON CONFLICT (name) DO NOTHING;
+INSERT INTO categories (name) VALUES ('Для компании') ON CONFLICT (name) DO NOTHING;
+INSERT INTO categories (name) VALUES ('Дополнение к заказу') ON CONFLICT (name) DO NOTHING;
+INSERT INTO categories (name) VALUES ('Сертификат') ON CONFLICT (name) DO NOTHING;
+INSERT INTO categories (name) VALUES ('Sale') ON CONFLICT (name) DO NOTHING;
+

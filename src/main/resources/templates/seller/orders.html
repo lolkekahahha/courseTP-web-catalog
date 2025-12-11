@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Все заказы</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <nav>
+        <a th:href="@{/}" class="logo-link">
+            <img th:src="@{/images/logo.png}" alt="Логотип" class="logo">
+        </a>
+        <div>
+            <a th:href="@{/}">Главная</a>
+            <a th:href="@{/seller/products}">Товары</a>
+            <a th:href="@{/seller/categories}">Категории</a>
+            <a th:href="@{/seller/orders}">Заказы</a>
+            <a th:href="@{/seller/stats}">Статистика</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h2>Все заказы клиентов</h2>
+        
+        <div th:if="${!orders.content.empty}" class="orders-list">
+            <div th:each="order : ${orders.content}" class="order-card-seller">
+                <div class="order-header-seller">
+                    <div class="order-info-group">
+                        <div class="order-number">
+                            <span class="order-label">Заказ №</span>
+                            <span class="order-id" th:text="${order.id}">1</span>
+                        </div>
+                        <div class="order-customer">
+                            <span class="customer-label">Клиент:</span>
+                            <span class="customer-name" th:text="${order.user.username}">user@example.com</span>
+                        </div>
+                    </div>
+                    <div class="order-header-right">
+                        <span class="order-status-badge" 
+                              th:classappend="${order.status != null ? order.status.name() : 'PROCESSING'}"
+                              th:text="${order.status != null ? order.status.displayName : 'В обработке'}">В обработке</span>
+                        <div class="order-date">
+                            <span th:text="${#temporals.format(order.orderDate, 'dd.MM.yyyy HH:mm')}">01.01.2024 12:00</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="order-content-grid">
+                    <!-- Данные доставки -->
+                    <div class="order-delivery-section">
+                        <h4>📍 Данные доставки</h4>
+                        <div class="delivery-details">
+                            <div class="detail-row">
+                                <span class="detail-label">Получатель:</span>
+                                <span class="detail-value" th:text="${order.firstName} + ' ' + ${order.lastName}">Имя Фамилия</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Телефон:</span>
+                                <span class="detail-value" th:text="${order.phoneNumber}">+7 (999) 999-99-99</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Город:</span>
+                                <span class="detail-value" th:text="${order.city}">Москва</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Адрес:</span>
+                                <span class="detail-value" th:text="${order.deliveryAddress}">ул. Примерная, д. 1, кв. 1</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="order-items-section">
+                        <h4>📦 Состав заказа</h4>
+                        <div class="items-table">
+                            <div class="items-header">
+                                <span>Товар</span>
+                                <span>Кол-во</span>
+                                <span>Цена</span>
+                                <span>Сумма</span>
+                            </div>
+                            <div th:each="item : ${order.items}" class="item-row">
+                                <div class="item-info">
+                                    <span class="item-name" th:text="${item.productName}">Товар</span>
+                                    <div th:if="${item.chainLength1 != null}" class="item-chain-details">
+                                        <span class="chain-info">⛓️ Цепь: <span th:text="${item.chainLength1} + ' см'">40 см</span></span>
+                                        <span th:if="${item.chainNumber1 != null}" class="chain-info">№ <span th:text="${item.chainNumber1}">123</span></span>
+                                    </div>
+                                    <div th:if="${item.chainLength2 != null}" class="item-chain-details">
+                                        <span class="chain-info">⛓️ Цепь 2: <span th:text="${item.chainLength2} + ' см'">45 см</span></span>
+                                        <span th:if="${item.chainNumber2 != null}" class="chain-info">№ <span th:text="${item.chainNumber2}">456</span></span>
+                                    </div>
+                                </div>
+                                <span class="item-quantity" th:text="${item.quantity}">1</span>
+                                <span class="item-price" th:text="${item.price} + ' ₽'">1000 ₽</span>
+                                <span class="item-total" th:text="${item.price * item.quantity} + ' ₽'">1000 ₽</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="order-footer-seller">
+                    <div class="status-controls">
+                        <form th:action="@{/seller/orders/{id}/status(id=${order.id})}" method="post" class="status-form">
+                            <label for="status">Изменить статус:</label>
+                            <select name="status" id="status">
+                                <option value="PROCESSING" th:selected="${order.status == null || order.status.name() == 'PROCESSING'}">В обработке</option>
+                                <option value="SHIPPED" th:selected="${order.status != null && order.status.name() == 'SHIPPED'}">Отправлен</option>
+                                <option value="COMPLETED" th:selected="${order.status != null && order.status.name() == 'COMPLETED'}">Выполнен</option>
+                                <option value="CANCELLED" th:selected="${order.status != null && order.status.name() == 'CANCELLED'}">Отменен</option>
+                            </select>
+                            <button type="submit" class="btn-update-status">Обновить</button>
+                        </form>
+                    </div>
+                    <div class="order-total-section">
+                        <span class="order-total-label">Итого к оплате:</span>
+                        <span class="order-total-amount" th:text="${order.totalAmount} + ' ₽'">5000 ₽</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div th:if="${orders.totalPages > 1}" class="pagination-container">
+            <div class="pagination-info">
+                Страница <span th:text="${orders.number + 1}">1</span> из <span th:text="${orders.totalPages}">1</span>
+                <span class="total-items">(Всего заказов: <span th:text="${orders.totalElements}">0</span>)</span>
+            </div>
+            
+            <div class="pagination">
+                <a th:if="${!orders.first}" 
+                   th:href="@{/seller/orders(page=0)}" 
+                   class="pagination-btn"
+                   title="Первая страница">
+                    ⟪
+                </a>
+                <span th:if="${orders.first}" class="pagination-btn disabled">⟪</span>
+                
+                <a th:if="${orders.hasPrevious()}" 
+                   th:href="@{/seller/orders(page=${orders.number - 1})}" 
+                   class="pagination-btn"
+                   title="Предыдущая страница">
+                    ‹
+                </a>
+                <span th:if="${!orders.hasPrevious()}" class="pagination-btn disabled">‹</span>
+                
+                <th:block th:each="i : ${#numbers.sequence(0, orders.totalPages - 1)}">
+                    <a th:if="${i == 0}" 
+                       th:href="@{/seller/orders(page=${i})}" 
+                       th:class="${i == orders.number} ? 'pagination-btn active' : 'pagination-btn'"
+                       th:text="${i + 1}">1</a>
+                    
+                    <span th:if="${i == 1 && orders.number > 3}" class="pagination-dots">...</span>
+                    
+                    <a th:if="${i > 0 && i < orders.totalPages - 1 && (i >= orders.number - 2 && i <= orders.number + 2)}" 
+                       th:href="@{/seller/orders(page=${i})}" 
+                       th:class="${i == orders.number} ? 'pagination-btn active' : 'pagination-btn'"
+                       th:text="${i + 1}">2</a>
+                    
+                    <span th:if="${i == orders.totalPages - 2 && orders.number < orders.totalPages - 4}" class="pagination-dots">...</span>
+                    
+                    <a th:if="${i == orders.totalPages - 1 && orders.totalPages > 1}" 
+                       th:href="@{/seller/orders(page=${i})}" 
+                       th:class="${i == orders.number} ? 'pagination-btn active' : 'pagination-btn'"
+                       th:text="${i + 1}">10</a>
+                </th:block>
+                
+                <a th:if="${orders.hasNext()}" 
+                   th:href="@{/seller/orders(page=${orders.number + 1})}" 
+                   class="pagination-btn"
+                   title="Следующая страница">
+                    ›
+                </a>
+                <span th:if="${!orders.hasNext()}" class="pagination-btn disabled">›</span>
+                
+                <a th:if="${!orders.last}" 
+                   th:href="@{/seller/orders(page=${orders.totalPages - 1})}" 
+                   class="pagination-btn"
+                   title="Последняя страница">
+                    ⟫
+                </a>
+                <span th:if="${orders.last}" class="pagination-btn disabled">⟫</span>
+            </div>
+        </div>
+        
+        <div th:if="${orders.content.empty}" class="empty-state">
+            <div class="empty-icon">📋</div>
+            <h2>Заказов пока нет</h2>
+            <p>Здесь будут отображаться все заказы клиентов</p>
+        </div>
+    </div>
+    
+    <style>
+        .orders-list {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            margin-top: 24px;
+        }
+        
+        .order-card-seller {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(152, 23, 21, 0.1);
+            overflow: hidden;
+        }
+        
+        .order-header-seller {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            background: linear-gradient(135deg, #981715 0%, #7a1211 100%);
+            color: white;
+        }
+        
+        .order-info-group {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+        }
+        
+        .order-number {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+        }
+        
+        .order-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .order-id {
+            font-size: 24px;
+            font-weight: 700;
+        }
+        
+        .order-customer {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .customer-label {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        
+        .customer-name {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .order-date {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .order-content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 24px;
+            padding: 24px;
+        }
+        
+        .order-delivery-section h4,
+        .order-items-section h4 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #0E0911;
+            margin-bottom: 16px;
+        }
+        
+        .delivery-details {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .detail-row {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 12px;
+            background: #f9fafb;
+            border-radius: 8px;
+        }
+        
+        .detail-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .detail-value {
+            font-size: 15px;
+            font-weight: 500;
+            color: #0E0911;
+        }
+        
+        .items-table {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .items-header {
+            display: grid;
+            grid-template-columns: 2fr auto auto auto;
+            gap: 16px;
+            padding: 12px;
+            background: #f9fafb;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .item-row {
+            display: grid;
+            grid-template-columns: 2fr auto auto auto;
+            gap: 16px;
+            padding: 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            align-items: center;
+        }
+        
+        .item-info {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        
+        .item-name {
+            font-size: 15px;
+            font-weight: 500;
+            color: #0E0911;
+        }
+        
+        .item-chain-details {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .chain-info {
+            font-size: 12px;
+            padding: 4px 8px;
+            background: #fee2e2;
+            color: #981715;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        
+        .item-quantity,
+        .item-price {
+            font-size: 14px;
+            color: #666;
+            text-align: center;
+        }
+        
+        .item-total {
+            font-size: 15px;
+            font-weight: 600;
+            color: #0E0911;
+            text-align: right;
+        }
+        
+        .order-header-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+        }
+        
+        .order-status-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .order-status-badge.PROCESSING {
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+            border: 2px solid white;
+        }
+        
+        .order-status-badge.SHIPPED {
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+            border: 2px solid white;
+        }
+        
+        .order-status-badge.COMPLETED {
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+            border: 2px solid white;
+        }
+        
+        .order-status-badge.CANCELLED {
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+            border: 2px solid white;
+        }
+        
+        .order-footer-seller {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            background: #f9fafb;
+            border-top: 2px solid #e5e7eb;
+            gap: 20px;
+        }
+        
+        .status-controls {
+            flex: 1;
+        }
+        
+        .status-form {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .status-form label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .status-form select {
+            padding: 8px 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        
+        .status-form select:focus {
+            outline: none;
+            border-color: #981715;
+        }
+        
+        .btn-update-status {
+            padding: 8px 16px;
+            background: #981715;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-update-status:hover {
+            background: #7a1211;
+            transform: translateY(-1px);
+        }
+        
+        .order-total-section {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
+        }
+        
+        .order-total-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #666;
+        }
+        
+        .order-total-amount {
+            font-size: 28px;
+            font-weight: 700;
+            color: #981715;
+        }
+        
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 80px 20px;
+            text-align: center;
+        }
+        
+        .empty-icon {
+            font-size: 80px;
+            margin-bottom: 24px;
+            opacity: 0.3;
+        }
+        
+        .empty-state h2 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #0E0911;
+            margin-bottom: 12px;
+        }
+        
+        .empty-state p {
+            font-size: 16px;
+            color: #666;
+        }
+        
+        @media (max-width: 968px) {
+            .order-content-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .order-info-group {
+                flex-direction: column;
+                gap: 12px;
+                align-items: flex-start;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .items-header {
+                display: none;
+            }
+            
+            .item-row {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+            
+            .item-quantity::before {
+                content: 'Количество: ';
+                color: #666;
+                font-size: 12px;
+            }
+            
+            .item-price::before {
+                content: 'Цена: ';
+                color: #666;
+                font-size: 12px;
+            }
+            
+            .item-total::before {
+                content: 'Сумма: ';
+                color: #666;
+                font-size: 12px;
+            }
+            
+            .item-quantity,
+            .item-price,
+            .item-total {
+                text-align: left;
+            }
+            
+            .order-header-seller {
+                flex-direction: column;
+                gap: 12px;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</body>
+</html>

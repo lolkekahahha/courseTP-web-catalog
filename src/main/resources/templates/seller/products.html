@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Управление товарами</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <nav>
+        <a th:href="@{/}" class="logo-link">
+            <img th:src="@{/images/logo.png}" alt="Логотип" class="logo">
+        </a>
+        <div>
+            <a th:href="@{/}">Главная</a>
+            <a th:href="@{/seller/products}">Товары</a>
+            <a th:href="@{/seller/categories}">Категории</a>
+            <a th:href="@{/seller/orders}">Заказы</a>
+            <a th:href="@{/seller/stats}">Статистика</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h2>Управление товарами</h2>
+        
+        <div class="form-section">
+            <h3 class="form-title">Добавить товар</h3>
+            <form id="productForm" th:action="@{/seller/products/add}" method="post" class="form">
+                <input type="text" name="name" placeholder="Название" required>
+                <textarea name="description" placeholder="Описание" required></textarea>
+                <input type="number" name="price" placeholder="Цена" step="0.01" required>
+                <input type="number" name="quantity" placeholder="Количество" required>
+                <input type="text" name="material" placeholder="Материал (например: ювелирная сталь)">
+                
+                <label class="section-label">Категории (выберите одну или несколько):</label>
+                <div class="categories-selector">
+                    <div th:each="cat : ${categories}" class="category-checkbox">
+                        <input type="checkbox" name="categoryIds" th:value="${cat.id}" th:id="'cat-' + ${cat.id}">
+                        <label th:for="'cat-' + ${cat.id}" th:text="${cat.name}">Категория</label>
+                    </div>
+                </div>
+                
+                <label class="section-label">Загрузить изображения с компьютера:</label>
+                <div class="upload-section">
+                    <label for="imageFiles" class="file-input-label">
+                        📁 Выбрать файлы
+                        <input type="file" id="imageFiles" accept="image/*" multiple class="file-input-hidden">
+                    </label>
+                    <span id="fileCount" class="file-count">Файлы не выбраны</span>
+                    <button type="button" onclick="uploadImages()" class="btn-upload">
+                        📷 Загрузить изображения
+                    </button>
+                    <div id="uploadProgress" class="upload-progress">
+                        <span class="spinner">⏳</span> Загрузка...
+                    </div>
+                </div>
+                
+                <div id="imagePreviewSection" style="display: none;">
+                    <label>Загруженные изображения:</label>
+                    <div id="imagePreview" class="image-preview-grid"></div>
+                    <div class="drag-hint">💡 Перетаскивайте изображения для изменения порядка</div>
+                </div>
+                
+                <input type="hidden" id="imageUrls" name="imageUrls">
+                
+                <button type="submit" class="btn-submit">✓ Добавить товар</button>
+            </form>
+        </div>
+        
+        <style>
+
+            .categories-selector {
+                max-height: 300px;
+                overflow-y: auto;
+                border: 1px solid #e5e7eb;
+                border-radius: 8px;
+                padding: 12px;
+                background: #f9fafb;
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                gap: 8px;
+            }
+            
+            .category-checkbox {
+                position: relative;
+            }
+            
+            .category-checkbox input[type="checkbox"] {
+                position: absolute;
+                opacity: 0;
+                cursor: pointer;
+            }
+            
+            .category-checkbox label {
+                display: block;
+                padding: 10px 16px;
+                background: white;
+                border: 2px solid #e5e7eb;
+                border-radius: 6px;
+                cursor: pointer;
+                transition: all 0.2s;
+                font-size: 14px;
+                text-align: center;
+            }
+            
+            .category-checkbox input[type="checkbox"]:checked + label {
+                background: #981715;
+                color: white;
+                border-color: #981715;
+                font-weight: 500;
+            }
+            
+            .category-checkbox label:hover {
+                border-color: #981715;
+                transform: translateY(-1px);
+                box-shadow: 0 2px 4px rgba(152, 23, 21, 0.1);
+            }
+            
+            .category-checkbox input[type="checkbox"]:checked + label:hover {
+                background: #7a120f;
+                border-color: #7a120f;
+            }
+            
+            .image-preview-item {
+                position: relative;
+                width: 120px;
+                height: 120px;
+                border: 2px solid #e5e7eb;
+                border-radius: 12px;
+                overflow: hidden;
+                transition: transform 0.2s;
+                cursor: move;
+                cursor: grab;
+            }
+            
+            .image-preview-item:active {
+                cursor: grabbing;
+            }
+            
+            .image-preview-item:hover {
+                transform: scale(1.05);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            }
+            
+            .image-preview-item.dragging {
+                opacity: 0.5;
+                transform: scale(0.95);
+            }
+            
+            .image-preview-item.drag-over {
+                border-color: #981715;
+                border-width: 3px;
+                background: #fef2f2;
+            }
+            
+            .image-preview-item img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+            
+            .image-preview-item .image-number {
+                position: absolute;
+                top: 8px;
+                left: 8px;
+                background: rgba(152, 23, 21, 0.95);
+                color: white;
+                border-radius: 50%;
+                width: 28px;
+                height: 28px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 14px;
+                font-weight: 600;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            }
+            
+            .image-preview-item .remove-btn {
+                position: absolute;
+                top: 8px;
+                right: 8px;
+                background: rgba(239, 68, 68, 0.95);
+                color: white;
+                border: none;
+                border-radius: 50%;
+                width: 28px;
+                height: 28px;
+                cursor: pointer;
+                font-size: 18px;
+                line-height: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                opacity: 0;
+                transition: all 0.2s;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            }
+            
+            .image-preview-item:hover .remove-btn {
+                opacity: 1;
+            }
+            
+            .image-preview-item .remove-btn:hover {
+                background: #dc2626;
+                transform: scale(1.15);
+            }
+            
+            .upload-section {
+                display: flex;
+                gap: 12px;
+                align-items: center;
+                flex-wrap: wrap;
+                margin-bottom: 20px;
+            }
+            
+            .file-input-hidden {
+                display: none;
+            }
+            
+            .file-input-label {
+                padding: 12px 24px;
+                background: white;
+                border: 2px solid #d1d5db;
+                border-radius: 8px;
+                cursor: pointer;
+                transition: all 0.2s;
+                font-weight: 500;
+                color: #374151;
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+            }
+            
+            .file-input-label:hover {
+                border-color: #981715;
+                background: #fef2f2;
+                color: #981715;
+                transform: translateY(-1px);
+                box-shadow: 0 2px 8px rgba(152, 23, 21, 0.2);
+            }
+            
+            .file-count {
+                color: #6b7280;
+                font-size: 14px;
+                flex: 1;
+                min-width: 150px;
+            }
+            
+            .btn-upload {
+                padding: 10px 20px;
+                background: #981715;
+                color: white;
+                border: none;
+                border-radius: 8px;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.2s;
+                white-space: nowrap;
+            }
+            
+            .btn-upload:hover {
+                background: #7a120f;
+                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(152, 23, 21, 0.3);
+            }
+            
+            .upload-progress {
+                display: none;
+                color: #981715;
+                font-weight: 500;
+                animation: pulse 1.5s ease-in-out infinite;
+            }
+            
+            @keyframes pulse {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.5; }
+            }
+            
+            .image-preview-grid {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 12px;
+                margin-top: 12px;
+                padding: 12px;
+                background: #f9fafb;
+                border-radius: 8px;
+                min-height: 60px;
+            }
+            
+            .drag-hint {
+                color: #6b7280;
+                font-size: 13px;
+                font-style: italic;
+                margin-top: 8px;
+                text-align: center;
+            }
+            
+            .btn-submit {
+                width: 100%;
+                padding: 14px;
+                background: var(--brand-red, #981715);
+                color: white;
+                border: none;
+                border-radius: 8px;
+                font-size: 16px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.2s;
+                margin-top: 20px;
+            }
+            
+            .btn-submit:hover {
+                background: #7a120f;
+                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(152, 23, 21, 0.3);
+            }
+            
+            .form-title {
+                text-align: center;
+                font-size: 28px;
+                font-weight: 700;
+                color: #1a1a1a;
+                margin-bottom: 30px;
+                padding-bottom: 15px;
+                border-bottom: 3px solid #981715;
+            }
+            
+            .section-label {
+                display: block;
+                margin-top: 24px;
+                margin-bottom: 12px;
+                font-weight: 600;
+                font-size: 15px;
+                color: #374151;
+            }
+            
+            .products-table {
+                width: 100%;
+                border-collapse: separate;
+                border-spacing: 0;
+                margin-top: 30px;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+                border-radius: 12px;
+                overflow: hidden;
+            }
+            
+            .products-table thead {
+                background: linear-gradient(135deg, #981715 0%, #7a120f 100%);
+                color: white;
+            }
+            
+            .products-table thead th {
+                padding: 16px;
+                text-align: left;
+                font-weight: 600;
+                font-size: 14px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+            
+            .products-table thead th:first-child {
+                border-top-left-radius: 12px;
+            }
+            
+            .products-table thead th:last-child {
+                border-top-right-radius: 12px;
+            }
+            
+            .products-table tbody tr {
+                background: white;
+                transition: background 0.2s;
+            }
+            
+            .products-table tbody tr:hover {
+                background: #f9fafb;
+            }
+            
+            .products-table tbody td {
+                padding: 14px 16px;
+                border-bottom: 1px solid #e5e7eb;
+            }
+            
+            .products-table tbody tr:last-child td {
+                border-bottom: none;
+            }
+            
+            .pagination-container {
+                margin-top: 30px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 16px;
+            }
+            
+            .pagination-info {
+                color: #6b7280;
+                font-size: 14px;
+                font-weight: 500;
+            }
+            
+            .pagination-info .total-items {
+                color: #9ca3af;
+                font-size: 13px;
+            }
+            
+            .pagination {
+                display: flex;
+                gap: 6px;
+                align-items: center;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .pagination-btn {
+                min-width: 40px;
+                height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border: 2px solid #e5e7eb;
+                border-radius: 8px;
+                background: white;
+                color: #374151;
+                text-decoration: none;
+                font-weight: 500;
+                font-size: 14px;
+                transition: all 0.2s;
+                cursor: pointer;
+                padding: 0 12px;
+            }
+            
+            .pagination-btn:hover:not(.disabled):not(.active) {
+                border-color: #981715;
+                background: #fef2f2;
+                color: #981715;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(152, 23, 21, 0.2);
+            }
+            
+            .pagination-btn.active {
+                background: #981715;
+                color: white;
+                border-color: #981715;
+                font-weight: 600;
+                box-shadow: 0 2px 8px rgba(152, 23, 21, 0.3);
+            }
+            
+            .pagination-btn.disabled {
+                opacity: 0.4;
+                cursor: not-allowed;
+                border-color: #e5e7eb;
+                color: #9ca3af;
+            }
+            
+            .pagination-dots {
+                color: #9ca3af;
+                padding: 0 8px;
+                font-weight: 600;
+            }
+            
+            @media (max-width: 768px) {
+                .pagination-btn {
+                    min-width: 36px;
+                    height: 36px;
+                    font-size: 13px;
+                }
+                
+                .pagination-info {
+                    font-size: 13px;
+                    text-align: center;
+                }
+            }
+        </style>
+        
+        <script>
+            let uploadedImages = [];
+            
+            // обработчик изменения выбора файлов
+            document.addEventListener('DOMContentLoaded', function() {
+                const fileInput = document.getElementById('imageFiles');
+                const fileCount = document.getElementById('fileCount');
+                
+                fileInput.addEventListener('change', function() {
+                    const count = this.files.length;
+                    if (count === 0) {
+                        fileCount.textContent = 'Файлы не выбраны';
+                        fileCount.style.color = '#6b7280';
+                    } else if (count === 1) {
+                        fileCount.textContent = '✓ Выбран 1 файл';
+                        fileCount.style.color = '#059669';
+                    } else {
+                        fileCount.textContent = `✓ Выбрано файлов: ${count}`;
+                        fileCount.style.color = '#059669';
+                    }
+                });
+            });
+            
+            async function uploadImages() {
+                const fileInput = document.getElementById('imageFiles');
+                const files = fileInput.files;
+                
+                if (files.length === 0) {
+                    alert('Выберите файлы для загрузки');
+                    return;
+                }
+                
+                console.log('Загружаем файлов:', files.length);
+                
+                const formData = new FormData();
+                for (let file of files) {
+                    formData.append('files', file);
+                    console.log('Добавлен файл:', file.name);
+                }
+                
+                document.getElementById('uploadProgress').style.display = 'block';
+                
+                try {
+                    const response = await fetch('/api/upload/images', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    console.log('Ответ сервера:', response.status);
+                    
+                    if (response.ok) {
+                        const urls = await response.json();
+                        console.log('Получены URL:', urls);
+                        uploadedImages = uploadedImages.concat(urls);
+                        updateImagePreview();
+                        fileInput.value = '';
+                        alert('Изображения успешно загружены!');
+                    } else {
+                        const errorText = await response.text();
+                        console.error('Ошибка:', errorText);
+                        alert('Ошибка загрузки изображений: ' + errorText);
+                    }
+                } catch (error) {
+                    console.error('Исключение:', error);
+                    alert('Ошибка: ' + error.message);
+                } finally {
+                    document.getElementById('uploadProgress').style.display = 'none';
+                }
+            }
+            
+            function updateImagePreview() {
+                const preview = document.getElementById('imagePreview');
+                const previewSection = document.getElementById('imagePreviewSection');
+                const input = document.getElementById('imageUrls');
+                
+                console.log('Обновление превью, изображений:', uploadedImages.length);
+                
+                // показываем/скрываем секцию превью
+                if (uploadedImages.length > 0) {
+                    previewSection.style.display = 'block';
+                } else {
+                    previewSection.style.display = 'none';
+                }
+                
+                preview.innerHTML = '';
+                uploadedImages.forEach((url, index) => {
+                    console.log('Добавление превью для:', url);
+                    const div = document.createElement('div');
+                    div.className = 'image-preview-item';
+                    div.draggable = true;
+                    div.dataset.index = index;
+                    div.innerHTML = `
+                        <div class="image-number">${index + 1}</div>
+                        <img src="${url}" alt="Preview" onerror="console.error('Ошибка загрузки изображения:', '${url}')">
+                        <button type="button" class="remove-btn" onclick="removeImage(${index})" title="Удалить изображение">×</button>
+                    `;
+                    
+                    // обработчики drag & drop
+                    div.addEventListener('dragstart', handleDragStart);
+                    div.addEventListener('dragover', handleDragOver);
+                    div.addEventListener('drop', handleDrop);
+                    div.addEventListener('dragend', handleDragEnd);
+                    div.addEventListener('dragenter', handleDragEnter);
+                    div.addEventListener('dragleave', handleDragLeave);
+                    
+                    preview.appendChild(div);
+                });
+                
+                input.value = uploadedImages.join('\n');
+                console.log('Значение input:', input.value);
+            }
+            
+            let draggedElement = null;
+            let draggedIndex = null;
+            
+            function handleDragStart(e) {
+                draggedElement = this;
+                draggedIndex = parseInt(this.dataset.index);
+                this.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/html', this.innerHTML);
+            }
+            
+            function handleDragOver(e) {
+                if (e.preventDefault) {
+                    e.preventDefault();
+                }
+                e.dataTransfer.dropEffect = 'move';
+                return false;
+            }
+            
+            function handleDragEnter(e) {
+                if (this !== draggedElement) {
+                    this.classList.add('drag-over');
+                }
+            }
+            
+            function handleDragLeave(e) {
+                this.classList.remove('drag-over');
+            }
+            
+            function handleDrop(e) {
+                if (e.stopPropagation) {
+                    e.stopPropagation();
+                }
+                
+                if (draggedElement !== this) {
+                    const dropIndex = parseInt(this.dataset.index);
+                    
+                    // меняем местами элементы в массиве
+                    const temp = uploadedImages[draggedIndex];
+                    uploadedImages[draggedIndex] = uploadedImages[dropIndex];
+                    uploadedImages[dropIndex] = temp;
+                    
+                    // обновляем превью
+                    updateImagePreview();
+                }
+                
+                return false;
+            }
+            
+            function handleDragEnd(e) {
+                this.classList.remove('dragging');
+                
+                // убираем класс drag-over со всех элементов
+                document.querySelectorAll('.image-preview-item').forEach(item => {
+                    item.classList.remove('drag-over');
+                });
+            }
+            
+            function removeImage(index) {
+                uploadedImages.splice(index, 1);
+                updateImagePreview();
+            }
+        </script>
+
+        <table class="products-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Название</th>
+                    <th>Цена</th>
+                    <th>Количество</th>
+                    <th>Категория</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="product : ${products.content}">
+                    <td th:text="${product.id}">ID</td>
+                    <td>
+                        <div th:text="${product.name}">Название</div>
+                        <small th:if="${!product.imageList.isEmpty()}" style="color: #666;">
+                            📷 <span th:text="${product.imageList.size()}">0</span> фото
+                        </small>
+                    </td>
+                    <td th:text="${product.price} + ' ₽'">Цена</td>
+                    <td th:text="${product.quantity}">Количество</td>
+                    <td>
+                        <div th:if="${!product.categories.isEmpty()}">
+                            <span th:each="cat, iterStat : ${product.categories}">
+                                <span th:text="${cat.name}">Категория</span><span th:if="${!iterStat.last}">, </span>
+                            </span>
+                        </div>
+                        <div th:if="${product.categories.isEmpty() && product.category != null}" th:text="${product.category.name}">Категория</div>
+                    </td>
+                    <td>
+                        <a th:href="@{/seller/products/edit/{id}(id=${product.id})}" class="btn-primary" style="margin-right: 8px; text-decoration: none; display: inline-block; padding: 8px 16px; font-size: 14px;">Редактировать</a>
+                        <form th:action="@{/seller/products/delete/{id}(id=${product.id})}" method="post" style="display:inline;">
+                            <button type="submit" class="btn-danger" onclick="return confirm('Вы уверены, что хотите удалить этот товар?')">Удалить</button>
+                        </form>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div th:if="${products.totalPages > 1}" class="pagination-container">
+            <div class="pagination-info">
+                Страница <span th:text="${products.number + 1}">1</span> из <span th:text="${products.totalPages}">1</span>
+                <span class="total-items">(Всего товаров: <span th:text="${products.totalElements}">0</span>)</span>
+            </div>
+            
+            <div class="pagination">
+
+                <a th:if="${!products.first}" 
+                   th:href="@{/seller/products(page=0)}" 
+                   class="pagination-btn"
+                   title="Первая страница">
+                    ⟪
+                </a>
+                <span th:if="${products.first}" class="pagination-btn disabled">⟪</span>
+                
+                <a th:if="${products.hasPrevious()}" 
+                   th:href="@{/seller/products(page=${products.number - 1})}" 
+                   class="pagination-btn"
+                   title="Предыдущая страница">
+                    ‹
+                </a>
+                <span th:if="${!products.hasPrevious()}" class="pagination-btn disabled">‹</span>
+                
+                <th:block th:each="i : ${#numbers.sequence(0, products.totalPages - 1)}">
+                    <a th:if="${i == 0}" 
+                       th:href="@{/seller/products(page=${i})}" 
+                       th:class="${i == products.number} ? 'pagination-btn active' : 'pagination-btn'"
+                       th:text="${i + 1}">1</a>
+
+                    <span th:if="${i == 1 && products.number > 3}" class="pagination-dots">...</span>
+
+                    <a th:if="${i > 0 && i < products.totalPages - 1 && (i >= products.number - 2 && i <= products.number + 2)}" 
+                       th:href="@{/seller/products(page=${i})}" 
+                       th:class="${i == products.number} ? 'pagination-btn active' : 'pagination-btn'"
+                       th:text="${i + 1}">2</a>
+
+                    <span th:if="${i == products.totalPages - 2 && products.number < products.totalPages - 4}" class="pagination-dots">...</span>
+
+                    <a th:if="${i == products.totalPages - 1 && products.totalPages > 1}" 
+                       th:href="@{/seller/products(page=${i})}" 
+                       th:class="${i == products.number} ? 'pagination-btn active' : 'pagination-btn'"
+                       th:text="${i + 1}">10</a>
+                </th:block>
+
+                <a th:if="${products.hasNext()}" 
+                   th:href="@{/seller/products(page=${products.number + 1})}" 
+                   class="pagination-btn"
+                   title="Следующая страница">
+                    ›
+                </a>
+                <span th:if="${!products.hasNext()}" class="pagination-btn disabled">›</span>
+
+                <a th:if="${!products.last}" 
+                   th:href="@{/seller/products(page=${products.totalPages - 1})}" 
+                   class="pagination-btn"
+                   title="Последняя страница">
+                    ⟫
+                </a>
+                <span th:if="${products.last}" class="pagination-btn disabled">⟫</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

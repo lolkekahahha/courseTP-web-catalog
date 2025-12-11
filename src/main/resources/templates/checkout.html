@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Оформление заказа</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <nav>
+        <a th:href="@{/}" class="logo-link">
+            <img th:src="@{/images/logo.png}" alt="Логотип" class="logo">
+        </a>
+        <div>
+            <a th:href="@{/}">Главная</a>
+            <a th:href="@{/cart}">Корзина</a>
+            <a th:href="@{/orders}">Заказы</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="checkout-container">
+            <div class="checkout-header">
+                <h1>Оформление заказа</h1>
+                <p class="checkout-subtitle">Заполните данные для доставки</p>
+            </div>
+
+            <div class="checkout-content">
+
+                <div class="delivery-form-section">
+                    <h2>Данные получателя</h2>
+                    <form th:action="@{/cart/checkout}" method="post" class="delivery-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="firstName">Имя <span class="required">*</span></label>
+                                <input type="text" id="firstName" name="firstName" required placeholder="Введите имя">
+                            </div>
+                            <div class="form-group">
+                                <label for="lastName">Фамилия <span class="required">*</span></label>
+                                <input type="text" id="lastName" name="lastName" required placeholder="Введите фамилию">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="phoneNumber">Номер телефона <span class="required">*</span></label>
+                            <input type="tel" id="phoneNumber" name="phoneNumber" required 
+                                   placeholder="+7 (___) ___-__-__"
+                                   pattern="[\+]?[0-9\s\-\(\)]+"
+                                   title="Введите корректный номер телефона">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="city">Город <span class="required">*</span></label>
+                            <input type="text" id="city" name="city" required placeholder="Введите город">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="deliveryAddress">Адрес доставки <span class="required">*</span></label>
+                            <textarea id="deliveryAddress" name="deliveryAddress" required 
+                                      placeholder="Улица, дом, квартира" rows="3"></textarea>
+                        </div>
+
+                        <div class="form-actions">
+                            <a th:href="@{/cart}" class="btn-secondary">← Вернуться в корзину</a>
+                            <button type="submit" class="btn-submit">Подтвердить заказ</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="order-summary">
+                    <h2>Ваш заказ</h2>
+                    <div class="summary-items">
+                        <div th:each="item : ${cart.items}" class="summary-item">
+                            <div class="item-info">
+                                <span class="item-name" th:text="${item.product.name}">Товар</span>
+                                <span class="item-quantity" th:text="'× ' + ${item.quantity}">× 1</span>
+                            </div>
+                            <span class="item-price" th:text="${item.product.price * item.quantity} + ' ₽'">1000 ₽</span>
+                        </div>
+                    </div>
+                    <div class="summary-divider"></div>
+                    <div class="summary-total">
+                        <span class="total-label">Итого:</span>
+                        <span class="total-amount" th:text="${#aggregates.sum(cart.items.![product.price * quantity])} + ' ₽'">5000 ₽</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .checkout-container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .checkout-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .checkout-header h1 {
+            font-size: 36px;
+            font-weight: 700;
+            color: #0E0911;
+            margin-bottom: 8px;
+        }
+
+        .checkout-subtitle {
+            font-size: 16px;
+            color: #666;
+        }
+
+        .checkout-content {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 40px;
+        }
+
+        .delivery-form-section {
+            background: #fff;
+            padding: 32px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(152, 23, 21, 0.1);
+        }
+
+        .delivery-form-section h2 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #0E0911;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #981715;
+        }
+
+        .delivery-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+        }
+
+        .required {
+            color: #ef4444;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 15px;
+            font-family: 'Montserrat', sans-serif;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #981715;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        .btn-secondary {
+            flex: 1;
+            padding: 14px 24px;
+            background: #6b7280;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            text-align: center;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+            transform: translateY(-1px);
+        }
+
+        .btn-submit {
+            flex: 2;
+            padding: 14px 24px;
+            background: #981715;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(152, 23, 21, 0.2);
+        }
+
+        .btn-submit:hover {
+            background: #7a1211;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(152, 23, 21, 0.3);
+        }
+
+        .order-summary {
+            background: #fff;
+            padding: 32px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(152, 23, 21, 0.1);
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+
+        .order-summary h2 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #0E0911;
+            margin-bottom: 24px;
+        }
+
+        .summary-items {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .summary-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .item-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex: 1;
+        }
+
+        .item-name {
+            font-size: 15px;
+            font-weight: 500;
+            color: #0E0911;
+        }
+
+        .item-quantity {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .item-price {
+            font-size: 15px;
+            font-weight: 600;
+            color: #0E0911;
+        }
+
+        .summary-divider {
+            height: 2px;
+            background: #e5e7eb;
+            margin: 20px 0;
+        }
+
+        .summary-total {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .total-label {
+            font-size: 18px;
+            font-weight: 600;
+            color: #0E0911;
+        }
+
+        .total-amount {
+            font-size: 24px;
+            font-weight: 700;
+            color: #981715;
+        }
+
+        @media (max-width: 968px) {
+            .checkout-content {
+                grid-template-columns: 1fr;
+            }
+
+            .order-summary {
+                position: static;
+                order: -1;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .checkout-header h1 {
+                font-size: 28px;
+            }
+
+            .delivery-form-section,
+            .order-summary {
+                padding: 20px;
+            }
+
+            .form-actions {
+                flex-direction: column;
+            }
+
+            .btn-secondary,
+            .btn-submit {
+                width: 100%;
+            }
+        }
+    </style>
+</body>
+</html>

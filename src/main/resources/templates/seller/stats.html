@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Статистика продаж</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <nav>
+        <a th:href="@{/}" class="logo-link">
+            <img th:src="@{/images/logo.png}" alt="Логотип" class="logo">
+        </a>
+        <div>
+            <a th:href="@{/}">Главная</a>
+            <a th:href="@{/seller/products}">Товары</a>
+            <a th:href="@{/seller/orders}">Заказы</a>
+            <a th:href="@{/seller/stats}">Статистика</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h2>Статистика продаж</h2>
+        
+        <div class="stats-cards">
+            <div class="stat-card">
+                <h3>Всего заказов</h3>
+                <p class="stat-value" th:text="${totalOrders}">0</p>
+            </div>
+            <div class="stat-card">
+                <h3>Общая выручка</h3>
+                <p class="stat-value" th:text="${totalRevenue} + ' ₽'">0 ₽</p>
+            </div>
+        </div>
+
+        <h3>Последние заказы</h3>
+        <table class="orders-table-modern">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Дата</th>
+                    <th>Покупатель</th>
+                    <th>Сумма</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="order : ${recentOrders}">
+                    <td th:text="${order.id}">ID</td>
+                    <td th:text="${#temporals.format(order.orderDate, 'dd.MM.yyyy HH:mm')}">Дата</td>
+                    <td th:text="${order.user.username}">Покупатель</td>
+                    <td th:text="${order.totalAmount} + ' ₽'">Сумма</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <style>
+        .orders-table-modern {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-top: 30px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+            background: white;
+        }
+        
+        .orders-table-modern thead {
+            background: linear-gradient(135deg, #981715 0%, #7a120f 100%);
+            color: white;
+        }
+        
+        .orders-table-modern thead th {
+            padding: 16px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .orders-table-modern thead th:first-child {
+            border-top-left-radius: 12px;
+        }
+        
+        .orders-table-modern thead th:last-child {
+            border-top-right-radius: 12px;
+        }
+        
+        .orders-table-modern tbody tr {
+            background: white;
+            transition: background 0.2s;
+        }
+        
+        .orders-table-modern tbody tr:hover {
+            background: #f9fafb;
+        }
+        
+        .orders-table-modern tbody td {
+            padding: 14px 16px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .orders-table-modern tbody tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .orders-table-modern tbody tr:last-child td:first-child {
+            border-bottom-left-radius: 12px;
+        }
+        
+        .orders-table-modern tbody tr:last-child td:last-child {
+            border-bottom-right-radius: 12px;
+        }
+    </style>
+</body>
+</html>

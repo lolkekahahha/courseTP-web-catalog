@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${category.name}">Категория</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .category-header {
+            max-width: 1200px;
+            margin: 40px auto 30px;
+            padding: 0 20px;
+        }
+        
+        .breadcrumb {
+            color: #999;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        .breadcrumb a {
+            color: #981715;
+            text-decoration: none;
+        }
+        
+        .breadcrumb a:hover {
+            opacity: 0.8;
+        }
+        
+        .category-title {
+            font-size: 36px;
+            font-weight: 700;
+            color: #0E0911;
+            margin-bottom: 10px;
+        }
+        
+        .category-info {
+            color: #666;
+            font-size: 16px;
+        }
+        
+        .products-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+        
+        .product-card {
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(14, 9, 17, 0.1);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(152, 23, 21, 0.1);
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(14, 9, 17, 0.15);
+        }
+        
+        .product-image {
+            width: 100%;
+            height: 280px;
+            overflow: hidden;
+            background: linear-gradient(135deg, #981715 0%, #7a1211 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .product-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+        
+        .product-card:hover .product-image img {
+            transform: scale(1.05);
+        }
+        
+        .product-info {
+            padding: 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .product-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #0E0911;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+        
+        .product-description {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 12px;
+            line-height: 1.5;
+            flex: 1;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .product-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: auto;
+        }
+        
+        .product-price {
+            font-size: 24px;
+            font-weight: 700;
+            color: #981715;
+        }
+        
+        .product-availability {
+            font-size: 13px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+        
+        .available {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .unavailable {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        
+        .empty-state h2 {
+            font-size: 24px;
+            margin-bottom: 12px;
+            color: #0E0911;
+        }
+        
+        .empty-state p {
+            font-size: 16px;
+            margin-bottom: 24px;
+        }
+        
+
+        @media (max-width: 768px) {
+            .products-grid {
+                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+                gap: 16px;
+            }
+            
+            .product-image {
+                height: 180px;
+            }
+            
+            .product-info {
+                padding: 12px;
+            }
+            
+            .product-name {
+                font-size: 15px;
+            }
+            
+            .product-price {
+                font-size: 18px;
+            }
+            
+            .category-title {
+                font-size: 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a th:href="@{/}" class="logo-link">
+            <img th:src="@{/images/logo.png}" alt="Логотип" class="logo">
+        </a>
+        <div>
+            <a th:href="@{/}">Главная</a>
+            <a th:href="@{/cart}">Корзина</a>
+        </div>
+    </nav>
+
+    <div class="category-header">
+        <div class="breadcrumb">
+            ← <a th:href="@{/}">Главная</a> / <span th:text="${category.name}">Категория</span>
+        </div>
+        
+        <h1 class="category-title" th:text="${category.name}">Категория</h1>
+        <p class="category-info">
+            Найдено товаров: <strong th:text="${products.totalElements}">0</strong>
+        </p>
+    </div>
+
+    <div class="products-container">
+        <div th:if="${products.content.isEmpty()}" class="empty-state">
+            <h2>Товары не найдены</h2>
+            <p>В этой категории пока нет товаров</p>
+            <a th:href="@{/}" class="btn">Вернуться на главную</a>
+        </div>
+        
+        <div th:unless="${products.content.isEmpty()}" class="products-grid">
+            <a th:each="product : ${products.content}" 
+               th:href="@{/products/{id}(id=${product.id})}" 
+               class="product-card">
+                <div class="product-image">
+                    <img th:src="${product.mainImage}" 
+                         th:alt="${product.name}"
+                         onerror="this.src='/images/placeholder.png'">
+                </div>
+                <div class="product-info">
+                    <h3 class="product-name" th:text="${product.name}">Название товара</h3>
+                    <p class="product-description" th:text="${product.description}">Описание товара</p>
+                    <div class="product-footer">
+                        <span class="product-price" th:text="${product.price} + ' ₽'">2 990 ₽</span>
+                        <span class="product-availability" 
+                              th:classappend="${product.available} ? 'available' : 'unavailable'"
+                              th:text="${product.available} ? 'В наличии' : 'Нет в наличии'">
+                            В наличии
+                        </span>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div th:if="${products.totalPages > 1}" class="pagination-container">
+            <div class="pagination-info">
+                Страница <span th:text="${products.number + 1}">1</span> из <span th:text="${products.totalPages}">1</span>
+                <span class="total-items">(Всего товаров: <span th:text="${products.totalElements}">0</span>)</span>
+            </div>
+            
+            <div class="pagination">
+
+                <a th:if="${!products.first}" 
+                   th:href="@{/category/{id}(id=${category.id}, page=0)}" 
+                   class="pagination-btn"
+                   title="Первая страница">
+                    ⟪
+                </a>
+                <span th:if="${products.first}" class="pagination-btn disabled">⟪</span>
+
+                <a th:if="${products.hasPrevious()}" 
+                   th:href="@{/category/{id}(id=${category.id}, page=${products.number - 1})}" 
+                   class="pagination-btn"
+                   title="Предыдущая страница">
+                    ‹
+                </a>
+                <span th:if="${!products.hasPrevious()}" class="pagination-btn disabled">‹</span>
+
+                <th:block th:each="i : ${#numbers.sequence(0, products.totalPages - 1)}">
+
+                    <a th:if="${i == 0}" 
+                       th:href="@{/category/{id}(id=${category.id}, page=${i})}" 
+                       th:class="${i == products.number} ? 'pagination-btn active' : 'pagination-btn'"
+                       th:text="${i + 1}">1</a>
+
+                    <span th:if="${i == 1 && products.number > 3}" class="pagination-dots">...</span>
+
+                    <a th:if="${i > 0 && i < products.totalPages - 1 && (i >= products.number - 2 && i <= products.number + 2)}" 
+                       th:href="@{/category/{id}(id=${category.id}, page=${i})}" 
+                       th:class="${i == products.number} ? 'pagination-btn active' : 'pagination-btn'"
+                       th:text="${i + 1}">2</a>
+
+                    <span th:if="${i == products.totalPages - 2 && products.number < products.totalPages - 4}" class="pagination-dots">...</span>
+
+                    <a th:if="${i == products.totalPages - 1 && products.totalPages > 1}" 
+                       th:href="@{/category/{id}(id=${category.id}, page=${i})}" 
+                       th:class="${i == products.number} ? 'pagination-btn active' : 'pagination-btn'"
+                       th:text="${i + 1}">10</a>
+                </th:block>
+
+                <a th:if="${products.hasNext()}" 
+                   th:href="@{/category/{id}(id=${category.id}, page=${products.number + 1})}" 
+                   class="pagination-btn"
+                   title="Следующая страница">
+                    ›
+                </a>
+                <span th:if="${!products.hasNext()}" class="pagination-btn disabled">›</span>
+
+                <a th:if="${!products.last}" 
+                   th:href="@{/category/{id}(id=${category.id}, page=${products.totalPages - 1})}" 
+                   class="pagination-btn"
+                   title="Последняя страница">
+                    ⟫
+                </a>
+                <span th:if="${products.last}" class="pagination-btn disabled">⟫</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

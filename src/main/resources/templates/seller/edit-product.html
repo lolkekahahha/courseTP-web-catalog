@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Редактировать товар</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <nav>
+        <a th:href="@{/}" class="logo-link">
+            <img th:src="@{/images/logo.png}" alt="Логотип" class="logo">
+        </a>
+        <div>
+            <a th:href="@{/}">Главная</a>
+            <a th:href="@{/seller/products}">Товары</a>
+            <a th:href="@{/seller/categories}">Категории</a>
+            <a th:href="@{/seller/orders}">Заказы</a>
+            <a th:href="@{/seller/stats}">Статистика</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="form-section">
+            <h2 class="form-title">Редактировать товар</h2>
+            
+            <form id="editProductForm" th:action="@{/seller/products/update/{id}(id=${product.id})}" method="post" class="form">
+                <div>
+                    <label>Название товара:</label>
+                    <input type="text" name="name" th:value="${product.name}" required>
+                </div>
+                
+                <div>
+                    <label>Описание:</label>
+                    <textarea name="description" rows="4" required th:text="${product.description}"></textarea>
+                </div>
+                
+                <div>
+                    <label>Цена (₽):</label>
+                    <input type="number" name="price" th:value="${product.price}" step="0.01" required>
+                </div>
+                
+                <div>
+                    <label>Количество:</label>
+                    <input type="number" name="quantity" th:value="${product.quantity}" required>
+                </div>
+                
+                <div>
+                    <label>Материал:</label>
+                    <input type="text" name="material" th:value="${product.material}" placeholder="Например: ювелирная сталь">
+                </div>
+                
+                <label class="section-label">Категории (выберите одну или несколько):</label>
+                <div class="categories-selector">
+                    <div th:each="cat : ${categories}" class="category-checkbox">
+                        <input type="checkbox" 
+                               name="categoryIds" 
+                               th:value="${cat.id}" 
+                               th:id="'cat-' + ${cat.id}"
+                               th:checked="${product.categories.contains(cat)}">
+                        <label th:for="'cat-' + ${cat.id}" th:text="${cat.name}">Категория</label>
+                    </div>
+                </div>
+                
+                <label class="section-label">Текущие изображения:</label>
+                <div th:if="${!product.imageList.isEmpty()}" class="current-images-grid">
+                    <div th:each="img, iterStat : ${product.imageList}" class="current-image-item">
+                        <img th:src="${img}" alt="Product image">
+                        <button type="button" class="remove-btn" th:onclick="'removeCurrentImage(' + ${iterStat.index} + ')'">×</button>
+                    </div>
+                </div>
+                <div th:if="${product.imageList.isEmpty()}" class="no-images">
+                    <p>У товара пока нет изображений</p>
+                </div>
+                
+                <label class="section-label">Добавить новые изображения:</label>
+                <div class="upload-section">
+                    <label for="imageFiles" class="file-input-label">
+                        📁 Выбрать файлы
+                        <input type="file" id="imageFiles" accept="image/*" multiple class="file-input-hidden">
+                    </label>
+                    <span id="fileCount" class="file-count">Файлы не выбраны</span>
+                    <button type="button" onclick="uploadImages()" class="btn-upload">
+                        📷 Загрузить изображения
+                    </button>
+                    <div id="uploadProgress" class="upload-progress">
+                        <span class="spinner">⏳</span> Загрузка...
+                    </div>
+                </div>
+                
+                <div id="newImagePreviewSection" style="display: none;">
+                    <label>Новые изображения:</label>
+                    <div id="newImagePreview" class="image-preview-grid"></div>
+                </div>
+                
+                <input type="hidden" id="imageUrls" name="imageUrls">
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn-submit">✓ Сохранить изменения</button>
+                    <a th:href="@{/seller/products}" class="btn-cancel">Отмена</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <style>
+        /* Стили для выбора категорий */
+        .categories-selector {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 12px;
+            background: #f9fafb;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .category-checkbox {
+            position: relative;
+        }
+        
+        .category-checkbox input[type="checkbox"] {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+        }
+        
+        .category-checkbox label {
+            display: block;
+            padding: 10px 16px;
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+            text-align: center;
+        }
+        
+        .category-checkbox input[type="checkbox"]:checked + label {
+            background: #981715;
+            color: white;
+            border-color: #981715;
+            font-weight: 500;
+        }
+        
+        .category-checkbox label:hover {
+            border-color: #981715;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(152, 23, 21, 0.1);
+        }
+        
+        .current-images-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding: 12px;
+            background: #f9fafb;
+            border-radius: 8px;
+        }
+        
+        .current-image-item {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: transform 0.2s;
+        }
+        
+        .current-image-item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .current-image-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .current-image-item .remove-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(239, 68, 68, 0.95);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            cursor: pointer;
+            font-size: 18px;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .current-image-item:hover .remove-btn {
+            opacity: 1;
+        }
+        
+        .current-image-item .remove-btn:hover {
+            background: #dc2626;
+            transform: scale(1.15);
+        }
+        
+        .no-images {
+            padding: 40px;
+            text-align: center;
+            background: #f9fafb;
+            border-radius: 8px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+        
+        .upload-section {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        
+        .file-input-hidden {
+            display: none;
+        }
+        
+        .file-input-label {
+            padding: 12px 24px;
+            background: white;
+            border: 2px solid #d1d5db;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+            color: #374151;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .file-input-label:hover {
+            border-color: #981715;
+            background: #fef2f2;
+            color: #981715;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(152, 23, 21, 0.2);
+        }
+        
+        .file-count {
+            color: #6b7280;
+            font-size: 14px;
+            flex: 1;
+            min-width: 150px;
+        }
+        
+        .btn-upload {
+            padding: 10px 20px;
+            background: #981715;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        
+        .btn-upload:hover {
+            background: #7a120f;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(152, 23, 21, 0.3);
+        }
+        
+        .upload-progress {
+            display: none;
+            color: #981715;
+            font-weight: 500;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .image-preview-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 12px;
+            padding: 12px;
+            background: #f9fafb;
+            border-radius: 8px;
+            min-height: 60px;
+        }
+        
+        .image-preview-item {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: transform 0.2s;
+        }
+        
+        .image-preview-item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .image-preview-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .image-preview-item .remove-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(239, 68, 68, 0.95);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            cursor: pointer;
+            font-size: 18px;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .image-preview-item:hover .remove-btn {
+            opacity: 1;
+        }
+        
+        .image-preview-item .remove-btn:hover {
+            background: #dc2626;
+            transform: scale(1.15);
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 30px;
+        }
+        
+        .btn-submit {
+            flex: 1;
+            padding: 14px;
+            background: #981715;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-submit:hover {
+            background: #7a120f;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(152, 23, 21, 0.3);
+        }
+        
+        .btn-cancel {
+            padding: 14px 32px;
+            background: #6b7280;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+        
+        .btn-cancel:hover {
+            background: #4b5563;
+            transform: translateY(-1px);
+        }
+        
+        .form-title {
+            text-align: center;
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #981715;
+        }
+        
+        .section-label {
+            display: block;
+            margin-top: 24px;
+            margin-bottom: 12px;
+            font-weight: 600;
+            font-size: 15px;
+            color: #374151;
+        }
+    </style>
+    
+    <script th:inline="javascript">
+
+        let currentImages = [];
+        let newImages = [];
+        
+        // обработчик изменения выбора файлов
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('imageFiles');
+            const fileCount = document.getElementById('fileCount');
+            
+            fileInput.addEventListener('change', function() {
+                const count = this.files.length;
+                if (count === 0) {
+                    fileCount.textContent = 'Файлы не выбраны';
+                    fileCount.style.color = '#6b7280';
+                } else if (count === 1) {
+                    fileCount.textContent = '✓ Выбран 1 файл';
+                    fileCount.style.color = '#059669';
+                } else {
+                    fileCount.textContent = `✓ Выбрано файлов: ${count}`;
+                    fileCount.style.color = '#059669';
+                }
+            });
+            
+            updateImageUrls();
+        });
+        
+        async function uploadImages() {
+            const fileInput = document.getElementById('imageFiles');
+            const files = fileInput.files;
+            
+            if (files.length === 0) {
+                alert('Выберите файлы для загрузки');
+                return;
+            }
+            
+            const formData = new FormData();
+            for (let file of files) {
+                formData.append('files', file);
+            }
+            
+            document.getElementById('uploadProgress').style.display = 'block';
+            
+            try {
+                const response = await fetch('/api/upload/images', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    const urls = await response.json();
+                    newImages = newImages.concat(urls);
+                    updateNewImagePreview();
+                    updateImageUrls();
+                    fileInput.value = '';
+                    document.getElementById('fileCount').textContent = 'Файлы не выбраны';
+                    document.getElementById('fileCount').style.color = '#6b7280';
+                    alert('Изображения успешно загружены!');
+                } else {
+                    const errorText = await response.text();
+                    alert('Ошибка загрузки изображений: ' + errorText);
+                }
+            } catch (error) {
+                alert('Ошибка: ' + error.message);
+            } finally {
+                document.getElementById('uploadProgress').style.display = 'none';
+            }
+        }
+        
+        function updateNewImagePreview() {
+            const preview = document.getElementById('newImagePreview');
+            const previewSection = document.getElementById('newImagePreviewSection');
+            
+            if (newImages.length > 0) {
+                previewSection.style.display = 'block';
+            } else {
+                previewSection.style.display = 'none';
+            }
+            
+            preview.innerHTML = '';
+            newImages.forEach((url, index) => {
+                const div = document.createElement('div');
+                div.className = 'image-preview-item';
+                div.innerHTML = `
+                    <img src="${url}" alt="Preview">
+                    <button type="button" class="remove-btn" onclick="removeNewImage(${index})">×</button>
+                `;
+                preview.appendChild(div);
+            });
+        }
+        
+        function removeCurrentImage(index) {
+            if (confirm('Удалить это изображение?')) {
+                currentImages.splice(index, 1);
+                updateImageUrls();
+                location.reload(); // перезагрузка страницы
+            }
+        }
+        
+        function removeNewImage(index) {
+            newImages.splice(index, 1);
+            updateNewImagePreview();
+            updateImageUrls();
+        }
+        
+        function updateImageUrls() {
+            const allImages = currentImages.concat(newImages);
+            document.getElementById('imageUrls').value = allImages.join('\n');
+        }
+    </script>
+</body>
+</html>

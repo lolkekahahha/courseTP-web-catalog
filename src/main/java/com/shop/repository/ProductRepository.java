@@ -21,4 +21,20 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     // запрос с сортировкой, в котором доступные товары первыми, затем по ID
     @Query("SELECT p FROM Product p JOIN p.categories c WHERE c.id = :categoryId ORDER BY CASE WHEN p.quantity > 0 THEN 0 ELSE 1 END, p.id ASC")
     Page<Product> findByCategoriesIdOrderByAvailability(@Param("categoryId") Long categoryId, Pageable pageable);
+    
+    // сортировка всех товаров: доступные первыми, затем недоступные
+    @Query("SELECT p FROM Product p ORDER BY CASE WHEN p.quantity > 0 THEN 0 ELSE 1 END, p.id DESC")
+    Page<Product> findAllOrderByAvailabilityAndNewest(Pageable pageable);
+    
+    // поиск по названию с сортировкой по доступности и новизне
+    @Query("SELECT p FROM Product p WHERE LOWER(p.name) LIKE LOWER(CONCAT('%', :name, '%')) ORDER BY CASE WHEN p.quantity > 0 THEN 0 ELSE 1 END, p.id DESC")
+    Page<Product> findByNameContainingIgnoreCaseOrderByAvailability(@Param("name") String name, Pageable pageable);
+    
+    // поиск по названию и категории 
+    @Query("SELECT p FROM Product p WHERE LOWER(p.name) LIKE LOWER(CONCAT('%', :name, '%')) AND p.category.id = :categoryId ORDER BY CASE WHEN p.quantity > 0 THEN 0 ELSE 1 END, p.id DESC")
+    Page<Product> findByNameContainingIgnoreCaseAndCategoryIdOrderByAvailability(@Param("name") String name, @Param("categoryId") Long categoryId, Pageable pageable);
+    
+    // поиск по категории
+    @Query("SELECT p FROM Product p WHERE p.category.id = :categoryId ORDER BY CASE WHEN p.quantity > 0 THEN 0 ELSE 1 END, p.id DESC")
+    Page<Product> findByCategoryIdOrderByAvailability(@Param("categoryId") Long categoryId, Pageable pageable);
 }

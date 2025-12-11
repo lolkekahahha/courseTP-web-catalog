@@ -16,11 +16,11 @@ public class WebConfig implements WebMvcConfigurer {
     
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // Настройка для отдачи загруженных изображений товаров
+        // настройка для отдачи загруженных изображений товаров
         registry.addResourceHandler("/uploads/products/**")
                 .addResourceLocations("file:" + uploadPath + "/");
         
-        // Настройка для отдачи загруженных изображений категорий
+        // настройка для отдачи загруженных изображений категорий
         registry.addResourceHandler("/uploads/categories/**")
                 .addResourceLocations("file:" + categoriesUploadPath + "/");
     }

@@ -21,13 +21,13 @@ public class ProductService {
 
     public Page<Product> searchProducts(String name, Long categoryId, Pageable pageable) {
         if (name != null && !name.isEmpty() && categoryId != null) {
-            return productRepository.findByNameContainingIgnoreCaseAndCategoryId(name, categoryId, pageable);
+            return productRepository.findByNameContainingIgnoreCaseAndCategoryIdOrderByAvailability(name, categoryId, pageable);
         } else if (name != null && !name.isEmpty()) {
-            return productRepository.findByNameContainingIgnoreCase(name, pageable);
+            return productRepository.findByNameContainingIgnoreCaseOrderByAvailability(name, pageable);
         } else if (categoryId != null) {
-            return productRepository.findByCategoryId(categoryId, pageable);
+            return productRepository.findByCategoryIdOrderByAvailability(categoryId, pageable);
         }
-        return productRepository.findAll(pageable);
+        return productRepository.findAllOrderByAvailabilityAndNewest(pageable);
     }
     
     public Page<Product> getProductsByCategory(Long categoryId, Pageable pageable) {

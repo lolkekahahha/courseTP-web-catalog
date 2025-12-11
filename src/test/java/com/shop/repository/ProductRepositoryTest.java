@@ -14,10 +14,6 @@ import java.math.BigDecimal;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Тест репозитория ProductRepository
- * Проверяет основные операции с продуктами в базе данных
- */
 @DataJpaTest
 @ActiveProfiles("test")
 class ProductRepositoryTest {
@@ -30,13 +26,11 @@ class ProductRepositoryTest {
 
     @Test
     void testFindByCategoryIdWithPagination() {
-        // Подготовка данных
-        // Создаем категорию
+
         Category category = new Category();
         category.setName("Электроника");
         entityManager.persistAndFlush(category);
 
-        // Создаем несколько продуктов в этой категории
         Product product1 = new Product();
         product1.setName("Смартфон");
         product1.setDescription("Современный смартфон");
@@ -53,7 +47,6 @@ class ProductRepositoryTest {
         product2.setCategory(category);
         entityManager.persistAndFlush(product2);
 
-        // Создаем продукт в другой категории
         Category otherCategory = new Category();
         otherCategory.setName("Одежда");
         entityManager.persistAndFlush(otherCategory);
@@ -66,11 +59,9 @@ class ProductRepositoryTest {
         product3.setCategory(otherCategory);
         entityManager.persistAndFlush(product3);
 
-        // Выполнение теста
         PageRequest pageRequest = PageRequest.of(0, 10);
         Page<Product> result = productRepository.findByCategoryId(category.getId(), pageRequest);
 
-        // Проверка результатов
         assertThat(result).isNotNull();
         assertThat(result.getContent()).hasSize(2);
         assertThat(result.getContent())
